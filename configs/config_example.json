@@ -1,0 +1,21 @@
+{
+  "API": {
+    "Token": "EeGbyD6UTlCjECrXDUZ3td7lnQKBm3W2b4leZ2CyPW",
+    "ZoneID": "oTsvYKAs3NudvxFztjgEuNRpuLzthJbs",
+    "update_timer": 120
+  },
+  "Domains": [
+    {
+      "name": "www.example.com",
+      "type": "A",
+      "proxied": true,
+      "create": true
+    },
+    {
+      "name": "www.example.com",
+      "type": "AAAA",
+      "proxied": true,
+      "create": true
+    }
+  ]
+}
