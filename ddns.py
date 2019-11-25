@@ -86,6 +86,8 @@ async def process_update_entries(ip, entry, cloudflare_entry):
                 {"type": entry['type'], "name": entry['name'], "content": ip,
                  "ttl": 1, "proxied": entry['proxied']})
             await update_entry(entry, cdfl_entry['id'], data, ip)
+            return
+    print(f"No update needed for Entry: {entry['name']}")
 
 
 async def run():
@@ -126,14 +128,14 @@ async def update_entry(config_entry, cloudflare_entry_id, datas, ip):
     async with aiohttp.ClientSession() as session:
         put = await session.put(api_url + config_entry['zoneId'] + "/dns_records/" + cloudflare_entry_id,
                                 data=datas, headers=HEADERS)
-        if put.status == 200:
+        if int(put.status) == 200:
             print(f"Updated Entry for {config_entry['name']} with IP {ip}. Status : {put.status}")
 
 
 async def create_entry(config_entry, datas, ip):
     async with aiohttp.ClientSession() as session:
         post = await session.post(api_url + config_entry['zoneId'] + "/dns_records/", data=datas, headers=HEADERS)
-        if post.status == 200:
+        if int(post.status) == 200:
             print(f"Create Entry for {config_entry['name']} with IP {ip}. Status : {post.status}")
 
 
