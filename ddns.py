@@ -8,14 +8,13 @@ from utils import Config
 api_url = "https://api.cloudflare.com/client/v4/zones/"
 api_token = Config.token()
 HEADERS = {"Authorization": f'Bearer {api_token}', "Content-Type": "application/json"}
-ipv4_url = "https://v4.ident.me/.json"
-ipv6_url = "https://v6.ident.me/.json"
+ip_url = "https://{}.ident.me/.json"
 IPV6_fail = False
 
 
 async def ipv4_address():
     async with aiohttp.ClientSession() as session:
-        ipv4_raw_response = await session.get(ipv4_url)
+        ipv4_raw_response = await session.get(ip_url.format("v4"))
         ipv4_response = await ipv4_raw_response.json()
         ipv4 = ipv4_response.get('address')
         await session.close()
@@ -26,7 +25,7 @@ async def ipv6_address():
     global IPV6_fail
     async with aiohttp.ClientSession() as session:
         try:
-            ipv6_raw_response = await session.get(ipv6_url)
+            ipv6_raw_response = await session.get(ip_url.format("v6"))
             ipv6_response = await ipv6_raw_response.json()
             ipv6 = ipv6_response.get('address')
             await session.close()
@@ -126,7 +125,7 @@ async def run():
 
 async def update_entry(config_entry, cloudflare_entry_id, datas, ip):
     async with aiohttp.ClientSession() as session:
-        put = await session.put(api_url + config_entry['zoneId'] + "/dns_records/" + cloudflare_entry_id,
+        put = await session.put(api_url + Config.zoneid() + "/dns_records/" + cloudflare_entry_id,
                                 data=datas, headers=HEADERS)
         if int(put.status) == 200:
             print(f"Updated Entry for {config_entry['name']} with IP {ip}. Status : {put.status}")
@@ -134,7 +133,7 @@ async def update_entry(config_entry, cloudflare_entry_id, datas, ip):
 
 async def create_entry(config_entry, datas, ip):
     async with aiohttp.ClientSession() as session:
-        post = await session.post(api_url + config_entry['zoneId'] + "/dns_records/", data=datas, headers=HEADERS)
+        post = await session.post(api_url + Config.zoneid() + "/dns_records/", data=datas, headers=HEADERS)
         if int(post.status) == 200:
             print(f"Create Entry for {config_entry['name']} with IP {ip}. Status : {post.status}")
 
