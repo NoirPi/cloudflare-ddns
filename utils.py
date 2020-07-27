@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-
 cfg = {}
 
 default = {
@@ -60,4 +59,4 @@ class Config:
 
 
 Path('./configs').mkdir(parents=True, exist_ok=True)
-Config.cfg_load(os.getenv('cfg', 'example'))
+Config.cfg_load(os.getenv('cfg', 'dev'))
