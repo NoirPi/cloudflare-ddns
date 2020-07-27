@@ -8,4 +8,8 @@ __pycache__/
 # C extensions
 *.so
 .idea
-configs/config_dev.json
+configs/*.json
+!configs/config_example.json
+cloudflare_ddns.egg-info/
+dist/
+build/

@@ -3,22 +3,24 @@ import json
 
 import aiohttp
 
-from utils import Config
+from .utils import Config
 
 api_url = "https://api.cloudflare.com/client/v4/zones/"
 api_token = Config.token()
 HEADERS = {"Authorization": f'Bearer {api_token}', "Content-Type": "application/json"}
-ip_url = "https://{}.ident.me/.json"
+ip_url = "https://{}.ident.me/"
 IPV6_fail = False
 
 
 async def ipv4_address():
     async with aiohttp.ClientSession() as session:
-        ipv4_raw_response = await session.get(ip_url.format("v4"))
-        ipv4_response = await ipv4_raw_response.json()
-        ipv4 = ipv4_response.get('address')
+        ipurl = ip_url.format("v4")
+        ipv4_raw_response = await session.get(ipurl)
+        # print()
+        # ipv4_response = await ipv4_raw_response.json()
+        # ipv4 = ipv4_response.get('address')
         await session.close()
-        return ipv4
+        return await ipv4_raw_response.text()
 
 
 async def ipv6_address():
@@ -26,14 +28,13 @@ async def ipv6_address():
     async with aiohttp.ClientSession() as session:
         try:
             ipv6_raw_response = await session.get(ip_url.format("v6"))
-            ipv6_response = await ipv6_raw_response.json()
-            ipv6 = ipv6_response.get('address')
+            # ipv6_response = await ipv6_raw_response.json()
+            # ipv6 = ipv6_response.get('address')
             await session.close()
-            return ipv6
+            return await ipv6_raw_response.text()
         except OSError:
             IPV6_fail = True
-            print("""IPv6 Address can't be recieved!
-            All IPv6 related Features are deactivated""")
+            print("""IPv6 Address can't be recieved!\nAll IPv6 related Features are deactivated""")
 
 
 async def get_cloudflare_entries(zone_id):
@@ -90,37 +91,37 @@ async def process_update_entries(ip, entry, cloudflare_entry):
 
 
 async def run():
-    status = True
-    while status:
-        cfg_domains = Config.domains()
-        cldf_entries = await get_cloudflare_entries(Config.zoneid())
+    # status = True
+    # while status:
+    cfg_domains = Config.domains()
+    cldf_entries = await get_cloudflare_entries(Config.zoneid())
 
-        cldf_ipv4_entries = await filter_new_list("A", cldf_entries)
-        cldf_ipv6_entries = await filter_new_list("AAAA", cldf_entries)
+    cldf_ipv4_entries = await filter_new_list("A", cldf_entries)
+    cldf_ipv6_entries = await filter_new_list("AAAA", cldf_entries)
 
-        ipv4_entries = await filter_new_list("A", cfg_domains)
-        ipv6_entries = await filter_new_list("AAAA", cfg_domains)
+    ipv4_entries = await filter_new_list("A", cfg_domains)
+    ipv6_entries = await filter_new_list("AAAA", cfg_domains)
 
-        new_ipv4_entries = await compare_new_entries(ipv4_entries, cldf_ipv4_entries)
-        ipv4 = await ipv4_address()
-        for cfg_entry in new_ipv4_entries:
-            await process_new_entries(ipv4, cfg_entry)
-            new_ipv4_entries.remove(cfg_entry)
+    new_ipv4_entries = await compare_new_entries(ipv4_entries, cldf_ipv4_entries)
+    ipv4 = await ipv4_address()
+    for cfg_entry in new_ipv4_entries:
+        await process_new_entries(ipv4, cfg_entry)
+        new_ipv4_entries.remove(cfg_entry)
 
-        ipv4_update_entries = await compare_update_entries(ipv4_entries, cldf_ipv4_entries)
-        for cfg_entry in ipv4_update_entries:
-            await process_update_entries(ipv4, cfg_entry, cldf_ipv4_entries)
-        if not IPV6_fail:
-            ipv6 = await ipv6_address()
-            new_ipv6_entries = await compare_new_entries(ipv6_entries, cldf_ipv6_entries)
-            for cfg_entry in new_ipv6_entries:
-                await process_new_entries(ipv6, cfg_entry)
-                new_ipv6_entries.remove(cfg_entry)
+    ipv4_update_entries = await compare_update_entries(ipv4_entries, cldf_ipv4_entries)
+    for cfg_entry in ipv4_update_entries:
+        await process_update_entries(ipv4, cfg_entry, cldf_ipv4_entries)
+    if not IPV6_fail:
+        ipv6 = await ipv6_address()
+        new_ipv6_entries = await compare_new_entries(ipv6_entries, cldf_ipv6_entries)
+        for cfg_entry in new_ipv6_entries:
+            await process_new_entries(ipv6, cfg_entry)
+            new_ipv6_entries.remove(cfg_entry)
 
-            ipv6_update_entries = await compare_update_entries(ipv6_entries, cldf_ipv6_entries)
-            for cfg_entry in ipv6_update_entries:
-                await process_update_entries(ipv6, cfg_entry, cldf_ipv6_entries)
-        await asyncio.sleep(Config.timer())
+        ipv6_update_entries = await compare_update_entries(ipv6_entries, cldf_ipv6_entries)
+        for cfg_entry in ipv6_update_entries:
+            await process_update_entries(ipv6, cfg_entry, cldf_ipv6_entries)
+    # await asyncio.sleep(Config.timer())
 
 
 async def update_entry(config_entry, cloudflare_entry_id, datas, ip):
@@ -138,9 +139,10 @@ async def create_entry(config_entry, datas, ip):
             print(f"Create Entry for {config_entry['name']} with IP {ip}. Status : {post.status}")
 
 
-async def main():
+async def amain():
     task = asyncio.create_task(run())
     await task
 
 
-asyncio.run(main())
+def main():
+    asyncio.run(amain())
