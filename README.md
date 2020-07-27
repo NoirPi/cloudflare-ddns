@@ -5,6 +5,9 @@ Python script to dynamically update multiple cloudflare records on one zonefile 
     It then will automatically update your records all X seconds
 
 # Config Values
+
+The config is stored in `/etc/ddns/` and will be generated on the first run.
+
 ## API:
 
 Key | Value | Description
@@ -25,7 +28,32 @@ Key | Value | Description
 # Usage:
 
 ## Installation
-    python -m pip3 install aiohttp
 
-## Start:
-    python3 ddns.py
+```bash
+pip install -U https://github.com/NoirPi/cloudflare-ddns/archive/master.zip # For latest version
+pip install -U https://github.com/NoirPi/cloudflare-ddns/archive/<commithash>.zip # For a specific version
+```
+
+Then simply use with:
+
+```
+ddns
+or 
+/usr/bin/env ddns
+```
+
+## Uninstalling
+
+To uninstall simply use
+
+```bash
+pip uninstall cloudflare-ddns
+```
+
+## Contributing
+
+To contribute, fork and clone the repo, and install dependencies with 
+
+```bash
+python setup.py develop
+```
