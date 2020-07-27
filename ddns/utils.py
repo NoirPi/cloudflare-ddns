@@ -48,16 +48,23 @@ class Config:
     @staticmethod
     def cfg_load(env="example"):
         """Load the Config file for the Bot or create one if it doesnt exists"""
-        if os.path.exists(f'configs/config_{env}.json'):
-            with open(f"configs/config_{env}.json", 'r', encoding='utf-8') as config:
+        config_file = config_basepath / f'config_{env}.json'
+        if config_file.exists():
+            with config_file.open(mode='r', encoding='utf-8') as config:
                 cfg_temp = json.load(config)
                 cfg.update(cfg_temp)
 
         else:
-            with open(f"configs/config_{env}.json", 'w+', encoding='utf-8') as conf:
+            with config_file.open(mode='w+', encoding='utf-8') as conf:
                 json.dump(default, conf)
                 cfg.update(conf)
+            print(f"Written default config to {config_file.resolve()}. Make sure to edit it")
 
 
-Path('./configs').mkdir(parents=True, exist_ok=True)
+if os.name == 'nt':
+    config_basepath = Path.home() / 'config' / 'ddns'
+else:
+    config_basepath = Path('/') / 'etc' / 'ddns'
+
+config_basepath.mkdir(parents=True, exist_ok=True)
 Config.cfg_load(os.getenv('cfg', 'example'))
