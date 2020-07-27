@@ -42,6 +42,13 @@ or
 /usr/bin/env ddns
 ```
 
+## Uninstalling
+
+To uninstall simply use
+
+```bash
+pip uninstall cloudflare-ddns
+```
 
 ## Contributing
 
