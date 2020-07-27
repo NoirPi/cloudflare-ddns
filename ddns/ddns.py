@@ -3,7 +3,7 @@ import json
 
 import aiohttp
 
-from utils import Config
+from .utils import Config
 
 api_url = "https://api.cloudflare.com/client/v4/zones/"
 api_token = Config.token()
@@ -139,11 +139,10 @@ async def create_entry(config_entry, datas, ip):
             print(f"Create Entry for {config_entry['name']} with IP {ip}. Status : {post.status}")
 
 
-# main()
+async def amain():
+    task = asyncio.create_task(run())
+    await task
 
-# async def main():
-#     task = asyncio.create_task(run())
-#     await task
-#
-#
-asyncio.run(run())
+
+def main():
+    asyncio.run(amain())
