@@ -8,6 +8,12 @@ Python script to dynamically update multiple cloudflare records on one zonefile 
 
 The config is stored in `/etc/ddns/` and will be generated on the first run.
 
+## IP URLS
+
+IPv4 = URL to get the plain text IPv4 address
+IPv6 = URL to get the plain text IPv6 address
+
+
 ## API:
 
 Key | Value | Description

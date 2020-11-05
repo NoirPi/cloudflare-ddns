@@ -5,6 +5,10 @@ from pathlib import Path
 cfg = {}
 
 default = {
+    "IPURLS": {
+        "IPv4": "https://ifconfig.me/ip",
+        "IPv6": "https://ifconfig.co/ip"
+    },
     "Domains": {
         "www.example.de": {
             "API": {
@@ -63,6 +67,10 @@ class Config:
         return os.getenv("Token", cfg['API'].get('Token', "No Token provided!"))
 
     @staticmethod
+    def ip_urls():
+        return cfg["IPURLS"]
+
+    @staticmethod
     def cfg_load(env="example"):
         """Load the Config file for the Bot or create one if it doesnt exists"""
         config_file = config_basepath / f'config_{env}.json'
@@ -84,4 +92,4 @@ else:
     config_basepath = Path('/') / 'etc' / 'ddns'
 
 config_basepath.mkdir(parents=True, exist_ok=True)
-Config.cfg_load(os.getenv('cfg', 'dev-multiple'))
+Config.cfg_load(os.getenv('cfg', 'multiple'))

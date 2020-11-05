@@ -1,4 +1,8 @@
 {
+  "IPURLS": {
+    "IPv4": "https://ifconfig.me/ip",
+    "IPv6": "https://ifconfig.co/ip"
+  },
   "Domains": {
     "www.example.de": {
       "API": {
