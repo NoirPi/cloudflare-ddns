@@ -9,13 +9,13 @@ from .utils import Config
 api_url = "https://api.cloudflare.com/client/v4/zones/"
 HEADERS = None
 baseheader = {"Authorization": f'Bearer ', "Content-Type": "application/json"}
-ip_url = "https://{}.ident.me/"
+ip_url = Config.ip_urls()
 IPV6_fail = False
 
 
 async def ipv4_address():
     async with aiohttp.ClientSession() as session:
-        ipurl = ip_url.format("v4")
+        ipurl = ip_url["IPv4"]
         ipv4_raw_response = await session.get(ipurl)
         await session.close()
         return await ipv4_raw_response.text()
@@ -25,7 +25,7 @@ async def ipv6_address():
     global IPV6_fail
     async with aiohttp.ClientSession() as session:
         try:
-            ipv6_raw_response = await session.get(ip_url.format("v6"))
+            ipv6_raw_response = await session.get(ip_url["IPv6"])
             await session.close()
             return await ipv6_raw_response.text()
         except OSError:
