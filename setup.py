@@ -14,7 +14,7 @@ setup(
     description="Script to dynamically update multiple cloudflare records on one zonefile with your actual ip",
     keywords="ddns dyndns cloudflare automation",
     packages=["ddns"],
-    install_requires=["aiohttp~=3.6.2"],
+    install_requires=["aiohttp>=3.7.4"],
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     url="https://github.com/NoirPi/cloudflare-ddns",
