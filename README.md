@@ -36,7 +36,7 @@ Key | Value | Description
 ## Installation
 
 ```bash
-pip install -U https://github.com/NoirPi/cloudflare-ddns/archive/master.zip # For latest version
+pip install -U https://github.com/NoirPi/cloudflare-ddns/archive/multiple.zip # For latest version
 pip install -U https://github.com/NoirPi/cloudflare-ddns/archive/<commithash>.zip # For a specific version
 ```
 
