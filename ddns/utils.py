@@ -1,10 +1,14 @@
 import json
 import os
+from asyncio import SelectorEventLoop, set_event_loop
 from pathlib import Path
+from selectors import SelectSelector
+
+from aiohttp import ClientSession
 
 cfg = {}
 
-default = json.load(open("../configs/config_example.json", "r"))
+default = {}
 
 
 class Config:
@@ -55,4 +59,23 @@ else:
     config_basepath = Path('/') / 'etc' / 'ddns'
 
 config_basepath.mkdir(parents=True, exist_ok=True)
+
+
+async def default_config():
+    global default
+    async with ClientSession() as session:
+        async with session.get(
+                url="https://raw.githubusercontent.com/NoirPi/cloudflare-ddns/multiple/configs/config_example.json") as response:
+            default = json.loads(await response.text())
+        await session.close()
+
+
+if not (config_basepath / f'config_example.json').exists():
+
+    selector = SelectSelector()
+    loop = SelectorEventLoop(selector)
+    set_event_loop(loop)
+    loop.run_until_complete(default_config())
+    loop.close()
+
 Config.cfg_load(os.getenv('cfg', 'multiple'))
