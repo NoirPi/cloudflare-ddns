@@ -4,45 +4,47 @@
     "IPv6": "https://ifconfig.co/ip"
   },
   "Domains": {
-    "www.example.de": {
+    "example1.com": {
       "API": {
-        "Token": "sSDhPpDLJglCcoiNbEXdcPOvgORVeOxWtxzMyHoA",
-        "ZoneID": "bBRmiArzxjrGvhcMsVnXMgOBIdoqDvfM",
-        "update_timer": 120
+        "Token": "PpzFrIuRSpLOJFOnsBIYdBTPzhZQPWBbMrmIJkQg",
+        "ZoneID": "sIHjxXyrUrhyIfQwZsVZjreVpHkIhSwB"
       },
       "Entries": [
         {
-          "name": "www.example.de",
+          "name": "www",
           "type": "A",
           "proxied": true,
-          "create": true
+          "create": true,
+          "ttl": 1
         },
         {
-          "name": "bit.sanoske.de",
+          "name": "www",
           "type": "AAAA",
           "proxied": true,
-          "create": true
+          "create": true,
+          "ttl": 1
         }
       ]
     },
-    "www.example.com": {
+    "example2.com": {
       "API": {
         "Token": "PpzFrIuRSpLOJFOnsBIYdBTPzhZQPWBbMrmIJkQg",
-        "ZoneID": "sIHjxXyrUrhyIfQwZsVZjreVpHkIhSwB",
-        "update_timer": 120
+        "ZoneID": "sIHjxXyrUrhyIfQwZsVZjreVpHkIhSwB"
       },
       "Entries": [
         {
-          "name": "www.example.com",
+          "name": "www",
           "type": "A",
           "proxied": true,
-          "create": true
+          "create": true,
+          "ttl": 1
         },
         {
-          "name": "www.example.com",
+          "name": "www",
           "type": "AAAA",
           "proxied": true,
-          "create": true
+          "create": true,
+          "ttl": 1
         }
       ]
     }

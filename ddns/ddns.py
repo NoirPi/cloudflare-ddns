@@ -1,9 +1,7 @@
-import asyncio
-import copy
-import json
-
-import aiohttp
-
+from asyncio import set_event_loop, SelectorEventLoop
+from json import dumps
+from selectors import SelectSelector
+from aiohttp import ClientSession, InvalidURL
 from .utils import Config
 
 api_url = "https://api.cloudflare.com/client/v4/zones/"
@@ -13,137 +11,171 @@ ip_url = Config.ip_urls()
 IPV6_fail = False
 
 
-async def ipv4_address():
-    async with aiohttp.ClientSession() as session:
-        ipurl = ip_url["IPv4"]
-        ipv4_raw_response = await session.get(ipurl)
-        await session.close()
-        return await ipv4_raw_response.text()
+class Entry:
+    def __init__(self, zoneid: str, subdomain: str, iptype: str, proxied: bool, ip: str, create: bool = False,
+                 subdomain_id: str = None, ttl: int = 1):
+        """
+        Class for the single config entrys. 
+        
+        :param zoneid: Zone ID of the Domain
+        :param subdomain: Full domain
+        :param iptype: Type of the entry. Can be 'A' or 'AAAA'
+        :param proxied: should the entry be proxied
+        :param ip: IP of the entry
+        :param create: Create entry if not exists
+        :param subdomain_id: Cloudflare domain ID
+        :param ttl: time to life for the entry
+        """
+        self.subdomain = subdomain
+        self.type = iptype
+        self.proxied = proxied
+        self.creation = create
+        self.zone = zoneid
+        self.id = subdomain_id
+        self.ttl = ttl
+        self.ip = ip
+        self.data = {"type": self.type, "name": self.subdomain, "content": self.ip, "ttl": self.ttl,
+                     "proxied": self.proxied}
 
+    def __str__(self) -> str:
+        """
+        Casts custom entry ID
+        :return entry_id:
+        """
+        return f"{self.subdomain.split('.')[0]}:{self.type}"
 
-async def ipv6_address():
-    global IPV6_fail
-    async with aiohttp.ClientSession() as session:
-        try:
-            ipv6_raw_response = await session.get(ip_url["IPv6"])
+    async def create(self):
+        """
+        Creates the entry
+        """
+        if self.creation:
+            async with ClientSession() as session:
+                response = await session.post(api_url + self.zone + "/dns_records/", data=dumps(self.data),
+                                              headers=HEADERS)
+                if response.status == 200:
+                    print(f"Create Entry for {self.subdomain:40} with IP {self.ip:39} | Status : {response.status:3}")
+                else:
+                    print(self.subdomain, await response.text(), response.status)
+                await session.close()
+        else:
+            print(f"Entry shouldn't be created {self.subdomain:40} | Config setup")
+
+    async def update(self):
+        """
+        Updates the entry
+        """
+        async with ClientSession() as session:
+            response = await session.put(api_url + self.zone + "/dns_records/" + self.id,
+                                         data=dumps(self.data), headers=HEADERS)
+            if response.status == 200:
+                print(f"Updated Entry for {self.subdomain:40} with IP {self.ip:39} | Status : {response.status:3}")
+            else:
+                print(self.subdomain, await response.text(), response.status)
             await session.close()
-            return await ipv6_raw_response.text()
+
+
+async def ipv_basic_urls(session: ClientSession, ip: str) -> str:
+    """
+    Used when no urls given
+    :param session: aiohttp client session
+    :param ip: Type of the searched IP, could be 'IPv4' or 'IPv6'
+    :return ipv: of basic domain
+    """
+    url = "https://1.1.1.1/cdn-cgi/trace" if ip == "IPv4" else "https://[2606:4700:4700::1111]/cdn-cgi/trace"
+    ipv_response = await session.get(url)
+    ipv = [line.split('=') for line in str(await ipv_response.text()).split('\n') if "ip=" in line][0][1]
+    return ipv
+
+
+async def ipv_address(ip: str) -> str:
+    """
+    Returns your Ipv4 or IPv6
+    :param ip: Type of the searched IP, could be 'IPv4' or 'IPv6'
+    :return ipv: for the given IP type
+    """
+    global IPV6_fail
+    async with ClientSession() as session:
+        try:
+            ipv_response = await session.get(ip_url[ip])
+            if ipv_response.status not in [200, 401, 402]:
+                ipv = await ipv_basic_urls(session, ip)
+            else:
+                ipv = await ipv_response.text()
+        except InvalidURL:
+            ipv = await ipv_basic_urls(session, ip)
         except OSError:
-            IPV6_fail = True
-            print("""IPv6 Address can't be recieved!\nAll IPv6 related Features are deactivated""")
+            if ip == "IPv6":
+                IPV6_fail, ipv = True, None
+                print("""IPv6 Address can't be recieved!\nAll IPv6 related Features are deactivated""")
+        await session.close()
+        return ipv
 
 
-async def get_cloudflare_entries(token, zone_id):
-    async with aiohttp.ClientSession() as session:
+async def get_cloudflare_entries(token: str, zone_id: str) -> list:
+    """
+    Gets your entries from cloudflare
+    :param token: Cloudflare token
+    :param zone_id: Cloudflare zone ID
+    :return entries: from cloudflare
+    """
+    async with ClientSession() as session:
         global HEADERS
-        HEADERS = copy.deepcopy(baseheader)
+        HEADERS = baseheader.copy()
         HEADERS['Authorization'] += token
         raw_response = await session.get(api_url + zone_id + "/dns_records", headers=HEADERS)
         response = await raw_response.json()
         await session.close()
-        return response['result']
-
-
-async def compare_new_entries(config_entries, cloudflare_entries):
-    new_entries = []
-    cfdl_names = [cfdl_entry['name'] for cfdl_entry in cloudflare_entries]
-    for cfg_entry in config_entries:
-        if cfg_entry['name'] not in cfdl_names and cfg_entry not in new_entries and cfg_entry['create']:
-            new_entries.append(cfg_entry)
-    return new_entries
-
-
-async def compare_update_entries(cfg_entries, cloudflare_entries):
-    given_entries = []
-    cfdl_names = [cfdl_entry['name'] for cfdl_entry in cloudflare_entries]
-    for cfg_entry in cfg_entries:
-        if cfg_entry['name'] in cfdl_names and cfg_entry not in given_entries:
-            given_entries.append(cfg_entry)
-    return given_entries
-
-
-async def filter_new_list(record_type, new_entries_list):
-    filtered = []
-    for cfg_entry in new_entries_list:
-        if cfg_entry['type'] == record_type and cfg_entry not in filtered:
-            filtered.append(cfg_entry)
-    return filtered
-
-
-async def process_new_entries(ip, entry, zoneid):
-    data = json.dumps(
-        {"type": entry['type'], "name": entry['name'], "content": ip,
-         "ttl": 1, "proxied": entry['proxied']})
-    await create_entry(entry, data, ip, zoneid)
-
-
-async def process_update_entries(ip, entry, cloudflare_entry, zoneid):
-    for cdfl_entry in cloudflare_entry:
-        if entry['name'] == cdfl_entry['name'] and entry['type'] == cdfl_entry['type'] \
-                and str(ip) != cdfl_entry['content']:
-            data = json.dumps(
-                {"type": entry['type'], "name": entry['name'], "content": ip,
-                 "ttl": 1, "proxied": entry['proxied']})
-            await update_entry(entry, cdfl_entry['id'], data, ip, zoneid)
-            return
-    print(f"No update needed for Entry: {entry['name']}")
+        return list(filter(lambda entry: entry['type'] in ['A', 'AAAA'], response['result']))
 
 
 async def run():
+    """
+    Main runner for the Programm. Don't touch!
+    """
     cfg_domains = Config.domains()
+    ipv4 = await ipv_address("IPv4")
+    ipv6 = await ipv_address("IPv6")
+
     for domain in cfg_domains.keys():
-        cldf_entries = await get_cloudflare_entries(cfg_domains[domain]["API"]['Token'],
-                                                    cfg_domains[domain]["API"]['ZoneID'])
-        cldf_ipv4_entries = await filter_new_list("A", cldf_entries)
-        cldf_ipv6_entries = await filter_new_list("AAAA", cldf_entries)
+        raw_conf_entries = list(filter(lambda entry: entry['type'] in ['A', 'AAAA'], cfg_domains[domain]["Entries"]))
+        raw_cldf_entries = await get_cloudflare_entries(cfg_domains[domain]["API"]['Token'],
+                                                        cfg_domains[domain]["API"]['ZoneID'])
 
-        ipv4_entries = await filter_new_list("A", cfg_domains[domain]["Entries"])
-        ipv6_entries = await filter_new_list("AAAA", cfg_domains[domain]["Entries"])
+        cldf_different_ip = list(filter(lambda cldf: cldf['content'] not in [ipv6, ipv4], raw_cldf_entries))
+        cldf_same_ip = [x for x in raw_cldf_entries if x not in cldf_different_ip]
 
-        new_ipv4_entries = await compare_new_entries(ipv4_entries, cldf_ipv4_entries)
-        ipv4 = await ipv4_address()
-        for cfg_entry in new_ipv4_entries:
-            await process_new_entries(ipv4, cfg_entry, zoneid=cfg_domains[domain]["API"]['ZoneID'])
-            new_ipv4_entries.remove(cfg_entry)
+        conf_ids = set([f"{entry['name']}:{entry['type']}" for entry in raw_conf_entries])
+        cldf_diffrent_ip_ids = set([f"{entry['name'].split('.')[0]}:{entry['type']}" for entry in cldf_different_ip])
+        cldf_same_ip_ids = set([f"{entry['name'].split('.')[0]}:{entry['type']}" for entry in cldf_same_ip])
 
-        ipv4_update_entries = await compare_update_entries(ipv4_entries, cldf_ipv4_entries)
-        for cfg_entry in ipv4_update_entries:
-            await process_update_entries(ipv4, cfg_entry, cldf_ipv4_entries,
-                                         zoneid=cfg_domains[domain]["API"]['ZoneID'])
-        if not IPV6_fail:
-            ipv6 = await ipv6_address()
-            new_ipv6_entries = await compare_new_entries(ipv6_entries, cldf_ipv6_entries)
-            for cfg_entry in new_ipv6_entries:
-                await process_new_entries(ipv6, cfg_entry, zoneid=cfg_domains[domain]["API"]['ZoneID'])
-                new_ipv6_entries.remove(cfg_entry)
+        new_entries_ids = conf_ids.difference(cldf_diffrent_ip_ids).difference(cldf_same_ip_ids)
+        update_entries_ids = conf_ids.intersection(cldf_diffrent_ip_ids)
 
-            ipv6_update_entries = await compare_update_entries(ipv6_entries, cldf_ipv6_entries)
-            for cfg_entry in ipv6_update_entries:
-                await process_update_entries(ipv6, cfg_entry, cldf_ipv6_entries,
-                                             zoneid=cfg_domains[domain]["API"]['ZoneID'])
-
-
-async def update_entry(config_entry, cloudflare_entry_id, datas, ip, zoneid):
-    async with aiohttp.ClientSession() as session:
-        put = await session.put(api_url + zoneid + "/dns_records/" + cloudflare_entry_id,
-                                data=datas, headers=HEADERS)
-        if int(put.status) == 200:
-            print(f"Updated Entry for {config_entry['name']} with IP {ip}. Status : {put.status}")
-        await session.close()
-
-
-async def create_entry(config_entry, datas, ip, zoneid):
-    async with aiohttp.ClientSession() as session:
-        post = await session.post(api_url + zoneid + "/dns_records/", data=datas, headers=HEADERS)
-        if int(post.status) == 200:
-            print(f"Create Entry for {config_entry['name']} with IP {ip}. Status : {post.status}")
-        await session.close()
-
-
-async def amain():
-    task = asyncio.create_task(run())
-    await task
+        for entry_dict in raw_conf_entries:
+            entry_cfg: Entry = Entry(cfg_domains[domain]["API"]['ZoneID'],
+                                     entry_dict['name'] + "." + domain,
+                                     entry_dict['type'],
+                                     entry_dict['proxied'],
+                                     ipv4 if entry_dict['type'] == 'A' else ipv6,
+                                     entry_dict['create'], ttl=entry_dict.get("ttl", 1))
+            if str(entry_cfg) in new_entries_ids:
+                await entry_cfg.create()
+            elif str(entry_cfg) in update_entries_ids:
+                cldf_entry = list(
+                    filter(lambda cldf, cfge=entry_cfg: cfge.subdomain == cldf['name'] and cfge.type == cldf['type'],
+                           cldf_different_ip))
+                entry_cfg.id = cldf_entry[0]['id']
+                await entry_cfg.update()
+        for entry in cldf_same_ip:
+            print(f"Nothing changed in {entry['name']:40} | {entry['type']:4}: {entry['content']}")
 
 
 def main():
-    asyncio.run(amain())
+    """
+    Starts main runner asynchronous
+    """
+    selector = SelectSelector()
+    loop = SelectorEventLoop(selector)
+    set_event_loop(loop)
+    loop.run_until_complete(run())
+    loop.close()

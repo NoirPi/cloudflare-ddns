@@ -4,75 +4,38 @@ from pathlib import Path
 
 cfg = {}
 
-default = {
-    "IPURLS": {
-        "IPv4": "https://ifconfig.me/ip",
-        "IPv6": "https://ifconfig.co/ip"
-    },
-    "Domains": {
-        "www.example.de": {
-            "API": {
-                "Token": "sSDhPpDLJglCcoiNbEXdcPOvgORVeOxWtxzMyHoA",
-                "ZoneID": "bBRmiArzxjrGvhcMsVnXMgOBIdoqDvfM",
-                "update_timer": 120
-            },
-            "Entries": [
-                {
-                    "name": "www.example.de",
-                    "type": "A",
-                    "proxied": True,
-                    "create": True
-                },
-                {
-                    "name": "bit.sanoske.de",
-                    "type": "AAAA",
-                    "proxied": True,
-                    "create": True
-                }
-            ]
-        },
-        "www.example.com": {
-            "API": {
-                "Token": "PpzFrIuRSpLOJFOnsBIYdBTPzhZQPWBbMrmIJkQg",
-                "ZoneID": "sIHjxXyrUrhyIfQwZsVZjreVpHkIhSwB",
-                "update_timer": 120
-            },
-            "Entries": [
-                {
-                    "name": "www.example.com",
-                    "type": "A",
-                    "proxied": True,
-                    "create": True
-                },
-                {
-                    "name": "www.example.com",
-                    "type": "AAAA",
-                    "proxied": True,
-                    "create": True
-                }
-            ]
-        }
-    }
-}
+default = json.load(open("../configs/config_example.json", "r"))
 
 
 class Config:
 
     @staticmethod
-    def domains():
+    def domains() -> dict:
+        """
+        Returns domains out of the config
+        :return domains:
+        """
         return cfg['Domains']
 
     @staticmethod
-    def token():
+    def token() -> str:
+        """
+        Returns cloudflare token
+        :return cloudflare token:
+        """
         return os.getenv("Token", cfg['API'].get('Token', "No Token provided!"))
 
     @staticmethod
-    def ip_urls():
+    def ip_urls() -> dict:
+        """
+        Returns IP urls
+        :return ip_urls:
+        """
         return cfg["IPURLS"]
 
     @staticmethod
     def cfg_load(env="example"):
-        """Load the Config file for the Bot or create one if it doesnt exists"""
+        """Load the Config file for the ddns or create one if it doesnt exists"""
         config_file = config_basepath / f'config_{env}.json'
         if config_file.exists():
             with config_file.open(mode='r', encoding='utf-8') as config:
