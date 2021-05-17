@@ -71,7 +71,6 @@ async def default_config():
 
 
 if not (config_basepath / f'config_example.json').exists():
-
     selector = SelectSelector()
     loop = SelectorEventLoop(selector)
     set_event_loop(loop)

@@ -83,8 +83,7 @@ async def ipv_basic_urls(session: ClientSession, ip: str) -> str:
     """
     url = "https://1.1.1.1/cdn-cgi/trace" if ip == "IPv4" else "https://[2606:4700:4700::1111]/cdn-cgi/trace"
     ipv_response = await session.get(url)
-    ipv = [line.split('=') for line in str(await ipv_response.text()).split('\n') if "ip=" in line][0][1]
-    return ipv
+    return [line.split('=') for line in str(await ipv_response.text()).split('\n') if "ip=" in line][0][1]
 
 
 async def ipv_address(ip: str) -> str:
@@ -144,9 +143,16 @@ async def run():
         cldf_different_ip = list(filter(lambda cldf: cldf['content'] not in [ipv6, ipv4], raw_cldf_entries))
         cldf_same_ip = [x for x in raw_cldf_entries if x not in cldf_different_ip]
 
-        conf_ids = set([f"{entry['name']}:{entry['type']}" for entry in raw_conf_entries])
-        cldf_diffrent_ip_ids = set([f"{entry['name'].split('.')[0]}:{entry['type']}" for entry in cldf_different_ip])
-        cldf_same_ip_ids = set([f"{entry['name'].split('.')[0]}:{entry['type']}" for entry in cldf_same_ip])
+        conf_ids = {f"{entry['name']}:{entry['type']}" for entry in raw_conf_entries}
+        cldf_diffrent_ip_ids = {
+            f"{entry['name'].split('.')[0]}:{entry['type']}"
+            for entry in cldf_different_ip
+        }
+
+        cldf_same_ip_ids = {
+            f"{entry['name'].split('.')[0]}:{entry['type']}"
+            for entry in cldf_same_ip
+        }
 
         new_entries_ids = conf_ids.difference(cldf_diffrent_ip_ids).difference(cldf_same_ip_ids)
         update_entries_ids = conf_ids.intersection(cldf_diffrent_ip_ids)
