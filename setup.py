@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="cloudflare-ddns",
-    version="1.0.1",
+    version="1.0.2",
     author="NoirPi",
     description="Script to dynamically update multiple cloudflare records on one zonefile with your actual ip",
     keywords="ddns dyndns cloudflare automation",

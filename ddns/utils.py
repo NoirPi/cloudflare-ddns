@@ -70,7 +70,7 @@ async def default_config():
         await session.close()
 
 
-if not (config_basepath / f'config_example.json').exists():
+if not (config_basepath / 'config_example.json').exists():
     selector = SelectSelector()
     loop = SelectorEventLoop(selector)
     set_event_loop(loop)

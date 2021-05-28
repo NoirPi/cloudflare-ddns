@@ -6,7 +6,7 @@ from .utils import Config
 
 api_url = "https://api.cloudflare.com/client/v4/zones/"
 HEADERS = None
-baseheader = {"Authorization": f'Bearer ', "Content-Type": "application/json"}
+baseheader = {"Authorization": 'Bearer ', "Content-Type": "application/json"}
 ip_url = Config.ip_urls()
 IPV6_fail = False
 
