@@ -13,6 +13,13 @@ default = {}
 
 class Config:
 
+    def __init__(self):
+        """
+        because we are only using this class while running,
+        there is no need for an actual initialization
+        """
+        pass
+
     @staticmethod
     def domains() -> dict:
         """
@@ -65,7 +72,8 @@ async def default_config():
     global default
     async with ClientSession() as session:
         async with session.get(
-                url="https://raw.githubusercontent.com/NoirPi/cloudflare-ddns/multiple/configs/config_example.json") as response:
+                url="https://raw.githubusercontent.com/NoirPi/cloudflare-ddns/multiple/configs/config_example.json") \
+                as response:
             default = json.loads(await response.text())
         await session.close()
 

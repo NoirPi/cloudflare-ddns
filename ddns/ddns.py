@@ -83,7 +83,11 @@ async def ipv_basic_urls(session: ClientSession, ip: str) -> str:
     """
     url = "https://1.1.1.1/cdn-cgi/trace" if ip == "IPv4" else "https://[2606:4700:4700::1111]/cdn-cgi/trace"
     ipv_response = await session.get(url)
-    return [line.split('=') for line in str(await ipv_response.text()).split('\n') if "ip=" in line][0][1]
+    return [
+        line.split('=')
+        for line in str(await ipv_response.text()).split('\n')
+        if "ip=" in line
+    ][0][1]
 
 
 async def ipv_address(ip: str) -> str:

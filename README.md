@@ -1,5 +1,5 @@
 # Cloudflare DynDNS Script
-Python script to dynamically update multiple cloudflare records on one zonefile with your actual IP.
+Simple Pythonscript to dynamically update multiple cloudflare records on one zonefile with your actual IP.
 
     Set up the config and run the script. 
     It then will automatically update your records all X seconds
@@ -16,21 +16,19 @@ IPv6 = URL to get the plain text IPv6 address
 
 ## API:
 
-Key | Value | Description
--------- | -------- | ---------
-Token: | "EeGbyD6UTlCjECrXDUZ3td7lnQKBm3W2b4leZ2CyPW" | Cloudflare API Token for your Domain
-ZoneID: | "oTsvYKAs3NudvxFztjgEuNRpuLzthJbs" | Zone ID for your Domain
-config_timer: | 120 | Loop Timer
-    
+| Key           | Value                                        | Description                          |
+|---------------|----------------------------------------------|--------------------------------------|
+| Token:        | "EeGbyD6UTlCjECrXDUZ3td7lnQKBm3W2b4leZ2CyPW" | Cloudflare API Token for your Domain |
+| ZoneID:       | "oTsvYKAs3NudvxFztjgEuNRpuLzthJbs"           | Zone ID for your Domain              |
 ## Domains:
 
-Key | Value | Description
--------- | -------- | ---------
-"name": | "www.example.com" | Full Domain Name including subdomain
-"type": | "A" | Record type (can be A or AAAA)
-"proxied": | True | should the domain be proxies over cloudflare
-"create": | True | should the domain be created if not existing
-   
+| Key        | Value             | Description                                  |
+|------------|-------------------|----------------------------------------------|
+| "name":    | "www.example.com" | Full Domain Name including subdomain         |
+| "type":    | "A"               | Record type (can be A or AAAA)               |
+| "proxied": | True              | should the domain be proxies over cloudflare |
+| "create":  | True              | should the domain be created if not existing |
+
 # Usage:
 
 ## Installation
@@ -42,11 +40,19 @@ pip install -U https://github.com/NoirPi/cloudflare-ddns/archive/<commithash>.zi
 
 Then simply use with:
 
-```
+```bash
 ddns
 or 
 /usr/bin/env ddns
 ```
+
+or add the following crontab to run the script every 5 minutes: 
+
+```diff
+- # This specific crontab requires syslog on your system:
+*/5 * * * * ddns 2>&1 | logger -t dyndns
+```
+You can check the crontab with ``grep 'dyndns' /var/log/syslog``
 
 ## Uninstalling
 
