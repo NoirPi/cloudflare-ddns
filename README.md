@@ -54,6 +54,17 @@ or add the following crontab to run the script every 5 minutes:
 ```
 You can check the crontab with ``grep 'dyndns' /var/log/syslog``
 
+
+## Systemd Service
+You can also use the example systemd service files in the systemd folder which reruns the service every 10 minutes:
+```diff
+wget https://github.com/NoirPi/cloudflare-ddns/blob/multiple/systemd/ddns.service -O /etc/systemd/system/ddns.service
+wget https://github.com/NoirPi/cloudflare-ddns/blob/multiple/systemd/ddns.timer -O /etc/systemd/system/ddns.timer
+systemctl enable ddns.service && systemctl enable ddns.timer 
+systemctl daemon-reload && systemctl restart ddns.timer
+```
+
+
 ## Uninstalling
 
 To uninstall simply use
