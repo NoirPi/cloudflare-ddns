@@ -1,0 +1,15 @@
+[Unit]
+Description=Dyndns
+After=pve-manager.service
+Requires=network.target
+
+[Service]
+TimeoutStartSec=0
+Type=forking
+NotifyAccess=all
+
+WorkingDirectory=/etc/ddns
+ExecStart=ddns
+
+[Install]
+WantedBy=multi-user.target
